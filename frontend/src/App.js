@@ -35,7 +35,7 @@ function App() {
             <Nav.Link as={NavLink} to={"/eam64_books"}>
               Books
             </Nav.Link>
-            <Nav.Link as={NavLink} to={user ? "" : "/login"}
+            <Nav.Link as={NavLink} to={user ? "" : "/eam64_login"}
               onClick={user ? logout : null}>
               {user ? "Logout User" : "Login"}
             </Nav.Link>
@@ -50,7 +50,7 @@ function App() {
           path="/eam64_books/:id/critique"
           element={<AddCritique user={user} />}
         ></Route>
-        <Route path="/login" element={<Login user={user} loginSetter={loginSetter} />}></Route>
+        <Route path="/eam64_login" element={<Login user={user} loginSetter={loginSetter} />}></Route>
       </Routes>
     </div>
   );

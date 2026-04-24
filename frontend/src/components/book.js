@@ -1,5 +1,5 @@
 // Engy Masoud, 4/13/26, IT302452, Phase 4, eam64@njit.edu
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import BooksDataService from '../service/BooksDataService'
 import { Link, useParams, useLocation } from 'react-router-dom'
 
@@ -10,7 +10,7 @@ import Col from 'react-bootstrap/Col';
 import Row from 'react-bootstrap/Row';
 import Button from 'react-bootstrap/Button';
 
-const Book = (user) => {
+const Book = (props) => {
 
   const location = useLocation();
   const passedBook = location.state && location.state.book;
@@ -20,24 +20,49 @@ const Book = (user) => {
     author: passedBook ? passedBook.author : "",
     year: passedBook ? passedBook.year : "",
     image: passedBook ? passedBook.image : "",
-    critiques: []
+    critiques: passedBook && passedBook.critiques ? passedBook.critiques : []
   })
   let { id } = useParams();
 
-  const deleteCritique = (critiqueId, index) => {
-    BooksDataService.deleteCritique(critiqueId, user.id)
+  const getBook = id => {
+    BooksDataService.get(id)
       .then(response => {
-        setBook((prevState) => {
-          prevState.critiques.splice(index, 1);
-          return ({
-            ...prevState
-          });
-        });
+        setBook(response.data)
+        console.log(response.data)
       })
       .catch(e => {
         console.log(e);
-      });
-  };
+      })
+  }
+
+  useEffect(() => {
+    getBook(id)
+  }, [id])
+
+  useEffect(() => {
+    BooksDataService.getCritiques(id)
+      .then(response => {
+        setBook(prevState => ({ ...prevState, critiques: response.data }))
+      })
+      .catch(e => {
+        console.log(e)
+      })
+  }, [id])
+
+  const deleteCritique = (critiqueId, index) => {
+    BooksDataService.deleteCritique(critiqueId, props.user.id)
+      .then(response => {
+        setBook((prevState) => {
+          prevState.critiques.splice(index, 1)
+          return ({
+            ...prevState
+          })
+        })
+      })
+      .catch(e => {
+        console.log(e)
+      })
+  }
 
   return (
     <div>
@@ -58,8 +83,8 @@ const Book = (user) => {
                 <Card.Text>
                   Year: {book.year}
                 </Card.Text>
-                {user &&
-                  <Link to={"/eam64_books/" + id + "/critique"}>
+                {props.user &&
+                  <Link to={"/eam64_books/" + id + "/critique"} state={{ book: book }}>
                     Add Critique
                   </Link>}
               </Card.Body>
@@ -72,12 +97,12 @@ const Book = (user) => {
                   <Card.Body>
                     <h5>{critique.name + " wrote on " + new Date(Date.parse(critique.lastModified)).toDateString()}</h5>
                     <p>{critique.text}</p>
-                    {user && user.id === critique.user_id &&
+                    {props.user && props.user.id === critique.user_id &&
                       <Row>
                         <Col>
                           <Link
                             to={"/eam64_books/" + id + "/critique"}
-                            state={{ currentCritique: critique }}
+                            state={{ book: book, currentCritique: critique }}
                           >Edit</Link>
                         </Col>
                         <Col>

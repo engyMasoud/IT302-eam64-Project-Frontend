@@ -6,22 +6,26 @@ import Form from 'react-bootstrap/Form';
 import Button from 'react-bootstrap/Button';
 
 const AddCritique = (props) => {
-  let editing = false;
-  let initialCritiqueState = "";
+  let editing = false
+  let initialCritiqueState = ""
   const location = useLocation();
   if (location.state && location.state.currentCritique) {
-    editing = true;
-    initialCritiqueState = location.state.currentCritique.text;
+    editing = true
+    initialCritiqueState = location.state.currentCritique.text
   }
 
-  const [critique, setCritique] = useState(initialCritiqueState);
-  const [submitted, setSubmitted] = useState(false);
+  const passedBook = location.state && location.state.book;
+
+  const [critique, setCritique] = useState(initialCritiqueState)
+  // keeps track if critique is submitted
+  const [submitted, setSubmitted] = useState(false)
+  const [updatedBook, setUpdatedBook] = useState(passedBook)
   let { id } = useParams();
 
   const onChangeCritique = e => {
-    const text = e.target.value;
+    const text = e.target.value
     setCritique(text);
-  };
+  }
 
   const saveCritique = () => {
     var data = {
@@ -29,35 +33,60 @@ const AddCritique = (props) => {
       name: props.user.name,
       user_id: props.user.id,
       book_id: id
-    };
+    }
 
     if (editing) {
-      data.critique_id = location.state.currentCritique._id;
+      // get existing critique id
+      data.critique_id = location.state.currentCritique._id
       BooksDataService.updateCritique(data)
         .then(response => {
-          setSubmitted(true);
-          console.log(response.data);
+          if (passedBook) {
+            const updatedCritiques = (passedBook.critiques || []).map(c =>
+              c._id === data.critique_id
+                ? { ...c, text: data.text, lastModified: new Date().toISOString() }
+                : c
+            )
+            setUpdatedBook({ ...passedBook, critiques: updatedCritiques })
+          }
+          setSubmitted(true)
+          console.log(response.data)
         })
         .catch(e => {
           console.log(e);
-        });
+        })
     } else {
       BooksDataService.createCritique(data)
         .then(response => {
-          setSubmitted(true);
-        })
-        .catch(e => {
-          console.log(e);
-        });
+          if (passedBook) {
+            const newCritique = {
+              text: data.text,
+              name: data.name,
+              user_id: data.user_id,
+              lastModified: new Date().toISOString(),
+              _id: response.data && (response.data._id || response.data.insertedId)
+            }
+            setUpdatedBook({ ...passedBook, critiques: [...(passedBook.critiques || []), newCritique] })
+          }
+          setSubmitted(true)
+        }).catch(e => { })
     }
-  };
+  }
+
+  if (!props.user) {
+    return (
+      <div>
+        <p>You must be logged in to add or edit a critique.</p>
+        <Link to={"/eam64_login"}>Login</Link>
+      </div>
+    )
+  }
 
   return (
     <div>
       {submitted ? (
         <div>
-          <h5>Critique submitted successfully.</h5>
-          <Link to={"/eam64_books/" + id}>
+          <h5>Critique submitted successfully</h5>
+          <Link to={"/eam64_books/" + id} state={{ book: updatedBook }}>
             Back to Book
           </Link>
         </div>
@@ -78,7 +107,7 @@ const AddCritique = (props) => {
         </Form>
       )}
     </div>
-  );
-};
+  )
+}
 
 export default AddCritique;

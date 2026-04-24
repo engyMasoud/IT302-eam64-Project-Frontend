@@ -41,6 +41,10 @@ class BooksDataService {
       { data: { critique_id: id, user_id: userId } }
     );
   }
-}
+  getCritiques(bookId) {
+    return axios.get(
+      `${process.env.REACT_APP_BACKEND_URL}/api/v1/eam64/books/critique?book_id=${bookId}`
+    )
+  }}
 
 export default new BooksDataService();
